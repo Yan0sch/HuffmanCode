@@ -2,19 +2,21 @@ using System;
 using System.Text;
 using System.IO;
 using Utils;
+using System.Collections.Generic;
 
-namespace HuffmanCode
+namespace HuffmanTree
 {
     class Node
     {
-        internal double prob;
-        internal int layer;
-        internal Node child1;
-        internal Node child2;
-        internal string name;
-        internal bool used;
-        internal byte code { get; private set; }
-        internal byte codeLength = 0;
+        public double prob;
+        public int layer;
+        public Node child1;
+        public Node child2;
+        public string name;
+        public bool used;
+        public byte code { get; private set; }
+        public byte codeLen = 0;
+
         public Node(string name, double prob, int depth = 0, Node child1 = null, Node child2 = null)
         {
             this.name = name;               // set to null if there are more than two chars
@@ -29,9 +31,9 @@ namespace HuffmanCode
             code += value;
             if (child1 == null || child2 == null) return;
             child1.setCode((byte)(value << 1));
-            child1.codeLength++;
+            child1.codeLen++;
             child2.setCode((byte)(value << 1));
-            child2.codeLength++;
+            child2.codeLen++;
         }
 
         public string ToString(int maxLayer)
@@ -43,9 +45,9 @@ namespace HuffmanCode
                 {
                     offset.Append("  ");
                 }
-                return $"{name}: {prob}; code {Convert.ToString(code, 2)}\n" + offset.ToString() + $"├ {child1.ToString(maxLayer)}\n" + offset.ToString() + $"└ {child2.ToString(maxLayer)}";
+                return $"{name}: {prob}; {Convert.ToString(code, 2)}\n" + offset.ToString() + $"├ {child1.ToString(maxLayer)}\n" + offset.ToString() + $"└ {child2.ToString(maxLayer)}";
             }
-            return name + $": {prob}; {Convert.ToString(code, 2)}; len: {codeLength}";
+            return name + $": {prob}; {Convert.ToString(code, 2).PadLeft(codeLen, '0')}";
         }
 
         // overide compare operators to compare the layer if the probabilites are equal and the probabilites if they are different
@@ -53,65 +55,75 @@ namespace HuffmanCode
         {
             if (Compare.IsApproximatelyEqual(n1.prob, n2.prob, 0.01))
             {
-                return n1.layer > n2.layer || n1.used;
+                return n1.layer > n2.layer;
             }
-            return n1.prob > n2.prob || n1.used;
+            return n1.prob > n2.prob;
         }
         public static bool operator <(Node n1, Node n2)
         {
             if (Compare.IsApproximatelyEqual(n1.prob, n2.prob, 0.01))
             {
-                return n1.layer < n2.layer || n2.used;
+                return n1.layer < n2.layer;
             }
-            return n1.prob < n2.prob || n2.used;
+            return n1.prob < n2.prob;
         }
     }
 
-    class Tree
+    public class Tree
     {
-        private Node[] tree = new Node[256];            // every char is represented by 8 bit, so the max number of possible chars is 256 (0..255)
-        public Node startNode;
-        public Tree(double[] charProbability)
+        private double[] charProbability = new double[256];     // list with the probability of each char (index ~ UTF-8)
+        public string message {get; private set;}
+        public string encodedMessage {get; private set;}
+        private List<Node> tree = new List<Node>();          // every char is represented by 8 bit, so the max number of possible chars is 256 (0..255)
+        private Node startNode;
+        public Tree(string message)
         {
-            CreateTree(charProbability);
+            this.message = message;
+            CountChars();
+            CreateTree();
         }
-
-        private void CreateTree(double[] charProbability)
+        private void CountChars()
+        {
+            // count the chars in the message, divide it by the message length and add it to the probability
+            foreach (char c in message)
+            {
+                charProbability[(byte)c] += (double)1 / message.Length;
+            }
+        }
+        private void CreateTree()
         {
             // create an array with Nodes from the array with the char probabilities
-            int currentIndex = 0;
+            int nodeCount = 0;
             for (int i = 0; i < charProbability.Length; i++)
             {
-                if (charProbability[i] > 0) tree[currentIndex++] = new Node(((char)i).ToString(), charProbability[i]);      // name of the node is the character
+                if (charProbability[i] > 0){
+                    tree.Add(new Node(((char)i).ToString(), charProbability[i]));     // name of the node is the character
+                    nodeCount++;
+                }
             }
-            int numberOfNodes = currentIndex;            // store the number of the nodes, because the hole array is much bigger
+            int numberOfUnusedNodes = nodeCount;            // store the number of the nodes, because the hole array is much bigger
 
-            int node1 = 0;
-            int node2 = 1;                           // connect the two nodes with the lowest probability to a higher node
+            int node1 = 0;                              // connect the two nodes with the lowest probability to a higher node
+            int node2 = 1;                              // init with the first two nodes
 
-            while (numberOfNodes > 1)
+            while (numberOfUnusedNodes > 1)
             {
-                for (int i = 0; i < currentIndex; i++)
+                for (int i = 0; i < nodeCount; i++)
                 {
                     if (node1 == i || node2 == i) continue;
                     if (tree[i].used) continue;
                     // the lowsest probability should be at node2 --> only prove if node1 prob is lower than the current prob
                     // --> node1 and node2 are the indices of the two lowest elements 
-                    if (tree[node1] < tree[node2])
-                    {
-                        int tmp = node1;
-                        node1 = node2;
-                        node2 = tmp;
-                    }
-                    if (tree[node1] > tree[i]) node1 = i;
+                    if (tree[node1] < tree[node2] || tree[node2].used) Tools.Swap(ref node1, ref node2);
+                    if (tree[node1] > tree[i] || tree[node1].used) node1 = i;
                 }
 
                 // add the two nodes with the lowest prob together in a new node (name1+name2, prob = node1.prob + node2.prob, layer = highest layer of both +1)
                 // the new node is written to the end of the array so it don't delete the child nodes
-                tree[currentIndex++] = new Node(tree[node1].name + tree[node2].name,
+                tree.Add(new Node(tree[node1].name + tree[node2].name,
                                                     tree[node1].prob + tree[node2].prob,
                                                     Math.Max(tree[node1].layer, tree[node2].layer) + 1,
-                                                    tree[node1], tree[node2]);
+                                                    tree[node1], tree[node2]));
 
                 // set the probability of the program to 1 so that the upper code ignore it
                 tree[node1].used = true;
@@ -119,22 +131,70 @@ namespace HuffmanCode
 
                 // add a zero to the code of node1 and a one to the code of node2
                 tree[node1].setCode(0);
-                tree[node1].codeLength++;
+                tree[node1].codeLen++;
                 tree[node2].setCode(1);
-                tree[node2].codeLength++;
-                numberOfNodes--;            // you "remove" two nodes and add a new on so the number of nodes decreases by 1
+                tree[node2].codeLen++;
+                nodeCount++;
+                numberOfUnusedNodes--;            // you "remove" two nodes and add a new on so the number of nodes decreases by 1
             }
-            startNode = tree[currentIndex - 1];
+            startNode = tree[nodeCount - 1];
         }
 
-        public (byte, byte) convertChar(char c)
+        private (byte, byte) encodeChar(char c)
         {
             foreach (Node n in tree)
             {
                 if (n.name.Length > 1 || n == null) break;
-                if (n.name[0] == c) return (n.code, n.codeLength);
+                if (n.name[0] == c) return (n.code, n.codeLen);
             }
             throw new ArgumentException($"Character {c} is not in the tree!");
+        }
+
+        public void Encode()
+        {
+            int leftBits = 8;
+            int currentLength;
+            int currentCode;
+            byte currentByte = 0;
+            StringBuilder result = new StringBuilder();
+            foreach (char c in message)
+            {
+                (currentCode, currentLength) = encodeChar(c);
+                leftBits -= currentLength;
+                if (leftBits > 0) currentByte += (byte) (currentCode << leftBits);
+                else
+                {
+                    currentByte += (byte) (currentCode >> -(leftBits));
+                    result.Append((char)currentByte);
+                    currentByte = 0;
+                    leftBits += 8;
+                    currentByte += (byte) (currentCode << leftBits);
+                }
+            }
+            encodedMessage = result.ToString();
+        }
+
+        public void Decode(){
+            StringBuilder result = new StringBuilder();
+            Node currentNode = startNode;
+            byte currentBit = 7;
+            int idx = 0;
+            while(idx < encodedMessage.Length){
+                if(((byte) encodedMessage[idx] >> currentBit) % 2 == 0) currentNode = currentNode.child1;
+                else currentNode = currentNode.child2;
+                Console.WriteLine("{0}: {1}", ((byte) encodedMessage[idx] >> currentBit) % 2, currentNode.name);
+                currentBit--;                
+
+                if(currentNode.child1 == null) {
+                    result.Append(currentNode.name);
+                    currentNode = startNode;
+                }
+                if(currentBit <= 0) {
+                    currentBit = 7;
+                    idx++;
+                }
+            }
+            message = result.ToString();
         }
 
         public override string ToString()
