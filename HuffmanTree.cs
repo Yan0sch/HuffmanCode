@@ -152,47 +152,63 @@ namespace HuffmanTree
 
         public void Encode()
         {
-            int leftBits = 8;
-            int currentLength;
-            int currentCode;
+            int leftBits = 8 - 3;           // 3 bits at the beginning to store the padding at the end
+            int len;
+            int code;
             byte currentByte = 0;
-            StringBuilder result = new StringBuilder();
+            List<byte> result = new List<byte>();
+
             foreach (char c in message)
             {
-                (currentCode, currentLength) = encodeChar(c);
-                leftBits -= currentLength;
-                if (leftBits > 0) currentByte += (byte) (currentCode << leftBits);
+                (code, len) = encodeChar(c);            // encode the char and get the length (because 0s at the beginning might disappier)
+                leftBits -= len;
+                if (leftBits > 0) currentByte += (byte) (code << leftBits);
                 else
                 {
-                    currentByte += (byte) (currentCode >> -(leftBits));
-                    result.Append((char)currentByte);
+                    currentByte += (byte) (code >> -(leftBits));
+                    result.Add(currentByte);
                     currentByte = 0;
                     leftBits += 8;
-                    currentByte += (byte) (currentCode << leftBits);
-                }
+                    currentByte += (byte) (code << leftBits);
+                }                
             }
-            encodedMessage = result.ToString();
+            if(leftBits < 8){
+                result.Add(currentByte);
+            }
+            if(leftBits >= 8) leftBits = 0;
+            
+            byte firstBit = (byte) (result[0]|(leftBits<<5));
+            result[0] |= (byte) (leftBits<<5);
+            
+            encodedMessage = Tools.ByteToString(result.ToArray());
         }
 
         public void Decode(){
             StringBuilder result = new StringBuilder();
             Node currentNode = startNode;
-            byte currentBit = 7;
+            int currentBit = 7 - 3;             // first three bits contain the amount padding at the end
             int idx = 0;
+
+            int overhead = ((byte) encodedMessage[0]) >> 5;
+
             while(idx < encodedMessage.Length){
                 if(((byte) encodedMessage[idx] >> currentBit) % 2 == 0) currentNode = currentNode.child1;
                 else currentNode = currentNode.child2;
-                Console.WriteLine("{0}: {1}", ((byte) encodedMessage[idx] >> currentBit) % 2, currentNode.name);
+
                 currentBit--;                
 
+                // when reached the bottom layer get the char
                 if(currentNode.child1 == null) {
                     result.Append(currentNode.name);
                     currentNode = startNode;
                 }
-                if(currentBit <= 0) {
+
+                // when reached the end of the current byte reset the counter and go to the next byte
+                if(currentBit < 0) {
                     currentBit = 7;
                     idx++;
                 }
+                if(idx >= encodedMessage.Length-1 && currentBit < overhead) break;          // check if the program reached the end of the message
             }
             message = result.ToString();
         }

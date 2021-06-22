@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace Utils{
 
@@ -24,6 +25,23 @@ namespace Utils{
                 divisor = Math.Min(value1, value2);
 
             return Math.Abs((value1 - value2) / divisor) <= epsilon;
+        }
+    }
+
+    class Tools{
+        public static void Swap<T>(ref T a, ref T b){
+            T tmp = a;
+            a = b;
+            b = tmp;
+        }
+
+        public static string ByteToString(byte[] arr){
+            StringBuilder result = new StringBuilder();
+
+            foreach(byte b in arr){
+                result.Append((char) b);
+            }
+            return result.ToString();
         }
     }
 }
