@@ -40,11 +40,42 @@ The basic approach is that more common symbols are represented by less bits than
 * Example word "ANANASSAFT":
   * p(a) = 2/5 → I(A) = -ld(2/5) = 1.32 bit
   * p(F) = 1/10 → I(F) = -ld(1/10) = 3.32 bit
+  * entropy (avg information content) H = 2.12 bits
 So you see the more often a symbol the smaller the information content. The ideal case is that the length of the code word match the information content.
+
+<!--
+p(A) = .4, I = 1.32 bit
+p(N) = .2, I = 2.32 bits
+p(S) = .2, I = 2.32 bits
+p(F) = .1, I = 3.32 bits
+p(N) = .1, I = 3.32 bits
+
+H = 2.12 bits
+-->
 
 ### Huffman tree
 
 * create a node for each symbols
 * combine two subtrees with the minimum properties to a new subtree and add their properties (if properies are equal choose those subtrees with the lowest depth)
 * at the end: go from the root backwards through the tree, label the nodes with 0 or 1 and read the codewords.
-![Example Tree](github.com/Yan0sch/HuffmanCode/blob/master/Example.png)
+
+Example: ANANASSAFT
+![Example Tree](img/Example.png)
+
+So you get the following codes:
+| Symbol | Code |
+| -- | -- |
+| A | 10 |
+| N | 00 |
+| S | 01 |
+| F | 110 |
+| T | 111 |
+
+<!--
+H = 2.4
+-->
+
+* ANANASSAFT := 100010001000010110110111
+* Length = 24 bits
+* entropy H = 2.4 bits
+* Uncompressed Length (each symbol 8 bit) = 80 bits
