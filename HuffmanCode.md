@@ -43,15 +43,6 @@ The basic approach is that more common symbols are represented by less bits than
   * entropy (avg information content) H = 2.12 bits
 So you see the more often a symbol the smaller the information content. The ideal case is that the length of the code word match the information content.
 
-<!--
-p(A) = .4, I = 1.32 bit
-p(N) = .2, I = 2.32 bits
-p(S) = .2, I = 2.32 bits
-p(F) = .1, I = 3.32 bits
-p(N) = .1, I = 3.32 bits
-
-H = 2.12 bits
--->
 
 ### Huffman tree
 
@@ -70,10 +61,6 @@ So you get the following codes:
 | S | 01 |
 | F | 110 |
 | T | 111 |
-
-<!--
-H = 2.4
--->
 
 * ANANASSAFT := 100010001000010110110111
 * Length = 24 bits
