@@ -23,7 +23,7 @@ namespace HuffmanTree
             this.layer = depth;             // layer of the Node
 
             // check if the children parameters are correct
-            if((child1 == null && child2 != null) || (child1 != null && child2 == null))
+            if ((child1 == null && child2 != null) || (child1 != null && child2 == null))
                 throw new ArgumentException("Every node takes exactly two children or no children!");
             this.children[0] = child1;
             this.children[1] = child2;
@@ -32,7 +32,7 @@ namespace HuffmanTree
         public Node(string name, double prob, int depth = 0, Node[] children = null)
         {
             // check if exactly two have been entered
-            if(children.Length != 2) throw new ArgumentException("Every node takes exactly two children or no children!");
+            if (children.Length != 2) throw new ArgumentException("Every node takes exactly two children or no children!");
             // Node(name, prob, depth, children[0], children[1]);
         }
 
@@ -43,7 +43,7 @@ namespace HuffmanTree
             if (children[0] == null || children[0] == null) return;
 
             // update the code of the children recursive
-            foreach(Node child in children) child.setCode((byte)(value << 1));
+            foreach (Node child in children) child.setCode((byte)(value << 1));
         }
 
         public string ToString(int maxLayer)
@@ -86,13 +86,15 @@ namespace HuffmanTree
 
         public byte[] encodedText { get; private set; }
         private List<Node> tree = new List<Node>();          // every char is represented by 8 bit, so the max number of possible chars is 256 (0..255)
-        private Node startNode;
+        private Node root;
+        private (byte, byte)[] codes = new (byte, byte)[256];         // store the codes in a array, first value is the code, second value is the length, index ~ UTF-8
 
         public Tree(string text)
         {
             this.text = Tools.StringToByte(text);
             CountChars();
             CreateTree();
+            CreateCodes();
         }
 
         public Tree(byte[] text)
@@ -100,6 +102,7 @@ namespace HuffmanTree
             this.text = text;
             CountChars();
             CreateTree();
+            CreateCodes();
         }
 
         public Tree(StreamReader reader, bool encoded)
@@ -114,7 +117,10 @@ namespace HuffmanTree
             }
         }
 
-        private void ReadEncodedFile(string path){
+
+        // TODO implement Reading and Writing methods
+        private void ReadEncodedFile(string path)
+        {
             // TODO
         }
 
@@ -123,17 +129,20 @@ namespace HuffmanTree
         // codelen: 1 to 8 --> 4 bit (0 to 15)
         // code: code value --> 1 to 8 bit
         // children: null (0) or another node --> 8 bit or 13 to 20 bit
-        private string NodesToString(){
+        private string NodesToString()
+        {
             StringBuilder result = new StringBuilder();
-            foreach(Node n in tree){
-                
+            foreach (Node n in tree)
+            {
+
             }
             return "";
         }
-        public void SaveFile(string path){
+        public void SaveFile(string path)
+        {
             StreamWriter writer = new StreamWriter(path);
-            
-            
+
+
         }
 
         private void CountChars()
@@ -141,7 +150,7 @@ namespace HuffmanTree
             // count the chars in the message, divide it by the message length and add it to the probability
             foreach (byte b in text)
             {
-                charProbability[b] += (double) 1 / text.Length;
+                charProbability[b] += (double)1 / text.Length;
             }
         }
         private void CreateTree()
@@ -156,6 +165,8 @@ namespace HuffmanTree
                     nodeCount++;
                 }
             }
+
+            
             int numberOfUnusedNodes = nodeCount;            // store the number of the nodes, that don't belong to another node
 
             int node1 = 0;                              // connect the two nodes with the lowest probability to a higher node
@@ -188,20 +199,26 @@ namespace HuffmanTree
                 tree[node2].setCode(1);
 
                 nodeCount++;
-                numberOfUnusedNodes--;            // you "remove" two nodes and add a new on so the number of nodes decreases by 1
+                numberOfUnusedNodes--;            // you "use" two nodes and add a new on so the number of unused nodes decreases by 1
             }
-            startNode = tree[nodeCount - 1];      // store the start node extra
+            root = tree[nodeCount - 1];      // store the start node extra
         }
 
-        // TODO find a better, more efficient solution
-        private (byte, byte) encodeChar(byte b)
+
+        // Just add this to have a full array with the codes for all UFT-8 chars
+        private void CreateCodes()
         {
             foreach (Node n in tree)
             {
-                if (n.layer != 0 || n == null) break;
-                if (n.name == b) return (n.code, n.codeLen);
+                if (n.layer > 0 || n == null) break;
+                codes[n.name] = (n.code, n.codeLen);
             }
-            throw new ArgumentException($"Character {(char)b} is not in the tree!");
+        }
+
+        private (byte, byte) encodeChar(byte b)
+        {
+            if (codes[b].Item2 == 0) throw new ArgumentException($"Character {b} is not in the tree!");
+            return codes[b];
         }
 
         public void Encode()
@@ -214,12 +231,12 @@ namespace HuffmanTree
             foreach (byte b in text)
             {
                 (code, len) = encodeChar(b);            // encode the char and get the length (because 0s at the beginning might disappier)
-                for(int i = len; i > 0; i--) result[index++] = (byte) ((code >> (i-1)) % 2);
+                for (int i = len; i > 0; i--) result[index++] = (byte)((code >> (i - 1)) % 2);
                 numOfBits += len;
             }
 
             // store the padding at the end in the first three bits
-            byte leftBits = (byte) (8 - (numOfBits % 8));
+            byte leftBits = (byte)(8 - (numOfBits % 8));
             result[0] = (byte)((leftBits >> 2) % 2);
             result[1] = (byte)((leftBits >> 1) % 2);
             result[2] = (byte)(leftBits % 2);
@@ -231,21 +248,23 @@ namespace HuffmanTree
         public void Decode()
         {
             List<byte> result = new List<byte>();
-            Node currentNode = startNode;
+            Node currentNode = root;
             int index = 3;
 
             BitArray textBitArray = new BitArray();
             textBitArray.bitArray = new List<byte>(encodedText);
             textBitArray.bytes = encodedText.Length;
 
-            byte overhead = (byte) (textBitArray.bitArray[0] >> 5);
-            
-            while(index < textBitArray.bitCapacity - overhead){
+            byte overhead = (byte)(textBitArray.bitArray[0] >> 5);
+
+            while (index < textBitArray.bitCapacity - overhead)
+            {
                 currentNode = currentNode.children[textBitArray[index++]];
 
-                if(currentNode.children[0] == null){
+                if (currentNode.children[0] == null)
+                {
                     result.Add(currentNode.name);
-                    currentNode = startNode;
+                    currentNode = root;
                 }
             }
             text = result.ToArray();
@@ -253,7 +272,7 @@ namespace HuffmanTree
 
         public override string ToString()
         {
-            return startNode.ToString(startNode.layer);
+            return root.ToString(root.layer);
         }
     }
 }

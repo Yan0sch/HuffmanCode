@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using Utils;
+using System.Diagnostics;
 
 namespace HuffmanTree
 {
@@ -34,7 +35,9 @@ namespace HuffmanTree
             time = DateTime.Now - start;
             Console.WriteLine("Message decoded. took {0}h {1}min {2}s {3}ms", time.Hours, time.Minutes, time.Seconds, time.Milliseconds);
 
-            //Console.WriteLine(tree.message);
+            Console.WriteLine(Tools.ByteToString(tree.text));
+            FileInfo fi = new FileInfo(path);
+            Console.WriteLine($"Size of file: {fi.Length} bytes\nSize of compressed text: {tree.encodedText.Length} bytes");
         }
     }
 }
