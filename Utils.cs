@@ -49,13 +49,21 @@ namespace Utils
             }
             return result.ToString();
         }
+
+        public static byte[] StringToByte(string s){
+            byte[] result = new byte[s.Length];
+            for(int i = 0; i < s.Length;i++){
+                result[i] = (byte) s[i];
+            }
+            return result;
+        }
     }
 
     // Manages a array of bits, wich are stored in 8 bit blocks (bytes)
     // based on the Collection List<byte>
     class BitArray
     {
-        public List<byte> bitArray {get; private set;}
+        public List<byte> bitArray = new List<byte>();
         public int bytes = 0;
         public int bitCapacity
         {
@@ -67,7 +75,7 @@ namespace Utils
             get
             {
                 int byteIndex = i / 8;
-                int bitIndex = 8 - (i % 8);
+                int bitIndex = 7 - (i % 8);
                 return (byte) ((bitArray[byteIndex] >> bitIndex) % 2);
             }
             set
@@ -82,10 +90,6 @@ namespace Utils
                 else if (value == 1) bitArray[byteIndex] |= (byte)(1 << bitIndex);
                 else throw new ArgumentException("Not allowed number. 0 or 1 expected.");
             }
-        }
-
-        public BitArray(){
-            bitArray = new List<byte>();
         }
 
         public override string ToString()
