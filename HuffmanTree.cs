@@ -186,9 +186,9 @@ namespace HuffmanTree
 
                 // add the two nodes with the lowest prob together in a new node
                 // the new node is written to the end of the array so it don't delete the child nodes
-                tree.Add(new Node(0, tree[node1].prob + tree[node2].prob,                // prob of the new node is the sum of the childs
+                tree.Add(new Node(0, tree[node1].prob + tree[node2].prob,                // prob of the new node is the sum of the children
                                     Math.Max(tree[node1].layer, tree[node2].layer) + 1,     // layer is max Layer +1
-                                    tree[node1], tree[node2]));                             // set the two childs
+                                    tree[node1], tree[node2]));                             // set the two children
 
                 // set the probability of the program to 1 so that the upper code ignore it
                 tree[node1].used = true;
