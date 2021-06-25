@@ -1,6 +1,6 @@
 # Huffman Code
 This program is an implementation of the huffman code in C#.
-If you want to know how it works see [Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding) or read the LiaScript in this repo (not created yet).
+If you want to know how it works see [Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding) or read the LiaScript..
 
 ## Short introduction
 1. Create a new object Tree, and give it a message as string. Note: you can't change the message after you set it
