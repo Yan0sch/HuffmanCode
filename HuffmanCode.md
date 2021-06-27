@@ -4,17 +4,7 @@ import: https://github.com/liascript/CodeRunner
 
 [![LiaScript](https://raw.githubusercontent.com/LiaScript/LiaScript/master/badges/course.svg)](https://liascript.github.io/course/?https://raw.githubusercontent.com/Yan0sch/HuffmanCode/master/HuffmanCode.md#1)
 
-# Huffman coding
-| Parameter                | Course Information |
-| - | - |
-| **Event:** | `Einführung in die Fachsprache` |
-| **Semester** |  `Sommersemester 2021` |
-| **University:** | `Technische Universität Bergakademie Freiberg` |
-| **Content:**  | `Description and implementation of Huffman coding` |
-| **Link to GitHub:** | [https://github.com/Yan0sch/HuffmanCode](https://github.com/Yan0sch/HuffmanCode) |
-| **Autoren** | @author |
-
-![](https://media.giphy.com/media/26tn33aiTi1jkl6H6/source.gif)
+![](https://en.wikipedia.org/wiki/Huffman_coding#/media/File:Huffman_tree_2.svg)
 
 ## General
 {{0}}
