@@ -4,8 +4,6 @@ import: https://github.com/liascript/CodeRunner
 
 [![LiaScript](https://raw.githubusercontent.com/LiaScript/LiaScript/master/badges/course.svg)](https://liascript.github.io/course/?https://raw.githubusercontent.com/Yan0sch/HuffmanCode/master/HuffmanCode.md#1)
 
-![](https://en.wikipedia.org/wiki/Huffman_coding#/media/File:Huffman_tree_2.svg)
-
 ## General
 {{0}}
 The Huffman code is a kind of entropy encoding, which was developed by David A. Huffman and published in the 1952 paper "A Method for the Construction of Minimum-Redundancy Codes". It is ad type of prefix code that is commonly used for data compression.
