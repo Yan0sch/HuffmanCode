@@ -55,7 +55,8 @@ So you get the following codes:
 * Length = 24 bits
 * Uncompressed Length (each symbol 8 bit) = 80 bits
 
-## C# implementation
+## Implementation
+### C#
 
 ```csharp HuffmanCode.cs
 using System;
@@ -68,46 +69,58 @@ namespace HuffmanTree
 {
     class Node
     {
-        public double prob;
+        public float prob;
         public int layer;
-        public Node child1;
-        public Node child2;
-        public string name;
+        public Node[] children = new Node[2];     // ! every node has exactly two children, not more and not less
+        public byte name;
         public bool used;
         public byte code { get; private set; }
         public byte codeLen = 0;
 
-        public Node(string name, double prob, int depth = 0, Node child1 = null, Node child2 = null)
+        public Node(byte name, float prob, int depth = 0, Node child1 = null, Node child2 = null)
         {
             this.name = name;               // set to null if there are more than two chars
             this.prob = prob;               // probability of one ore more chars in the message
             this.layer = depth;             // layer of the Node
-            this.child1 = child1;    // the two Nodes that come next in the tree (null if its the last Node)
-            this.child2 = child2;
+
+            // check if the children parameters are correct
+            if ((child1 == null && child2 != null) || (child1 != null && child2 == null))
+                throw new ArgumentException("Every node takes exactly two children or no children!");
+            this.children[0] = child1;
+            this.children[1] = child2;
         }
+
+        public Node(string name, float prob, int depth = 0, Node[] children = null)
+        {
+            // check if exactly two have been entered
+            if (children.Length != 2) throw new ArgumentException("Every node takes exactly two children or no children!");
+            // Node(name, prob, depth, children[0], children[1]);
+        }
+
+        public Node(){}
 
         public void setCode(byte value)
         {
             code += value;
-            if (child1 == null || child2 == null) return;
-            child1.setCode((byte)(value << 1));
-            child1.codeLen++;
-            child2.setCode((byte)(value << 1));
-            child2.codeLen++;
+            codeLen += 1;
+            if (children[0] == null || children[0] == null) return;
+
+            // update the code of the children recursive
+            foreach (Node child in children) child.setCode((byte)(value << 1));
         }
 
         public string ToString(int maxLayer)
         {
-            if (child1 != null && child2 != null)
+            if (children[0] != null && children[1] != null)
             {
                 StringBuilder offset = new StringBuilder();
                 for (int i = 0; i < maxLayer - layer; i++)
                 {
                     offset.Append("  ");
                 }
-                return $"{name}: {prob}; {Convert.ToString(code, 2)}\n" + offset.ToString() + $"├ {child1.ToString(maxLayer)}\n" + offset.ToString() + $"└ {child2.ToString(maxLayer)}";
+                return $"┐ {prob}; {Convert.ToString(code, 2)}\n" + offset.ToString() + $"├ {children[0].ToString(maxLayer)}\n" + offset.ToString() + $"└ {children[1].ToString(maxLayer)}";
             }
-            return name + $": {prob}; {Convert.ToString(code, 2).PadLeft(codeLen, '0')}";
+            return $"{(char)name}: {prob}; {Convert.ToString(code, 2).PadLeft(codeLen, '0')}";
         }
 
         // overide compare operators to compare the layer if the probabilites are equal and the probabilites if they are different
@@ -131,23 +144,29 @@ namespace HuffmanTree
 
     public class Tree
     {
-        private double[] charProbability = new double[256];     // list with the probability of each char (index ~ UTF-8)
-        public string message {get; private set;}
-        public string encodedMessage {get; private set;}
+        private float[] charProbability = new float[256];     // list with the probability of each char (index ~ UTF-8)
+        public byte[] text;                 // note that when you change the text, you need to create a new Huffman tree
+
+        public byte[] encodedText { get; private set; }
         private List<Node> tree = new List<Node>();          // every char is represented by 8 bit, so the max number of possible chars is 256 (0..255)
-        private Node startNode;
-        public Tree(string message)
+        private Node root;
+        private (byte, byte)[] codes = new (byte, byte)[256];         // store the codes in a array, first value is the code, second value is the length, index ~ UTF-8
+
+        public Tree(string path)
         {
-            this.message = message;
+
+            text = File.ReadAllBytes(path);
             CountChars();
             CreateTree();
+            CreateCodes();
         }
+
         private void CountChars()
         {
             // count the chars in the message, divide it by the message length and add it to the probability
-            foreach (char c in message)
+            foreach (byte b in text)
             {
-                charProbability[(byte)c] += (double)1 / message.Length;
+                charProbability[b] += (float)1 / text.Length;
             }
         }
         private void CreateTree()
@@ -156,12 +175,15 @@ namespace HuffmanTree
             int nodeCount = 0;
             for (int i = 0; i < charProbability.Length; i++)
             {
-                if (charProbability[i] > 0){
-                    tree.Add(new Node(((char)i).ToString(), charProbability[i]));     // name of the node is the character
+                if (charProbability[i] > 0)
+                {
+                    tree.Add(new Node((byte)i, charProbability[i]));     // name of the node is the character
                     nodeCount++;
                 }
             }
-            int numberOfUnusedNodes = nodeCount;            // store the number of the nodes, because the hole array is much bigger
+
+
+            int numberOfUnusedNodes = nodeCount;            // store the number of the nodes, that don't belong to another node
 
             int node1 = 0;                              // connect the two nodes with the lowest probability to a higher node
             int node2 = 1;                              // init with the first two nodes
@@ -178,12 +200,11 @@ namespace HuffmanTree
                     if (tree[node1] > tree[i] || tree[node1].used) node1 = i;
                 }
 
-                // add the two nodes with the lowest prob together in a new node (name1+name2, prob = node1.prob + node2.prob, layer = highest layer of both +1)
+                // add the two nodes with the lowest prob together in a new node
                 // the new node is written to the end of the array so it don't delete the child nodes
-                tree.Add(new Node(tree[node1].name + tree[node2].name,
-                                                    tree[node1].prob + tree[node2].prob,
-                                                    Math.Max(tree[node1].layer, tree[node2].layer) + 1,
-                                                    tree[node1], tree[node2]));
+                tree.Add(new Node(0, tree[node1].prob + tree[node2].prob,                // prob of the new node is the sum of the children
+                                    Math.Max(tree[node1].layer, tree[node2].layer) + 1,     // layer is max Layer +1
+                                    tree[node1], tree[node2]));                             // set the two children
 
                 // set the probability of the program to 1 so that the upper code ignore it
                 tree[node1].used = true;
@@ -191,110 +212,90 @@ namespace HuffmanTree
 
                 // add a zero to the code of node1 and a one to the code of node2
                 tree[node1].setCode(0);
-                tree[node1].codeLen++;
                 tree[node2].setCode(1);
-                tree[node2].codeLen++;
+
                 nodeCount++;
-                numberOfUnusedNodes--;            // you "remove" two nodes and add a new on so the number of nodes decreases by 1
+                numberOfUnusedNodes--;            // you "use" two nodes and add a new on so the number of unused nodes decreases by 1
             }
-            startNode = tree[nodeCount - 1];
+            root = tree[nodeCount - 1];      // store the start node extra
         }
 
-        private (byte, byte) encodeChar(char c)
+
+        // Just add this to have a full array with the codes for all UFT-8 chars
+        private void CreateCodes()
         {
             foreach (Node n in tree)
             {
-                if (n.name.Length > 1 || n == null) break;
-                if (n.name[0] == c) return (n.code, n.codeLen);
+                if (n.layer > 0 || n == null) break;
+                codes[n.name] = (n.code, n.codeLen);
             }
-            throw new ArgumentException($"Character {c} is not in the tree!");
+        }
+
+        private (byte, byte) encodeChar(byte b)
+        {
+            if (codes[b].Item2 == 0) throw new ArgumentException($"Character {b} is not in the tree!");
+            return codes[b];
         }
 
         public void Encode()
         {
-            int leftBits = 8 - 3;           // 3 bits at the beginning to store the padding at the end
-            int len;
-            int code;
-            byte currentByte = 0;
-            List<byte> result = new List<byte>();
+            int index = 3;           // 3 bits at the beginning to store the padding at the end
+            byte len, code;
+            int numOfBits = 3;
+            BitArray result = new BitArray();
 
-            foreach (char c in message)
+            foreach (byte b in text)
             {
-                (code, len) = encodeChar(c);            // encode the char and get the length (because 0s at the beginning might disappier)
-                leftBits -= len;
-                if (leftBits > 0) currentByte += (byte) (code << leftBits);
-                else
-                {
-                    currentByte += (byte) (code >> -(leftBits));
-                    result.Add(currentByte);
-                    currentByte = 0;
-                    leftBits += 8;
-                    currentByte += (byte) (code << leftBits);
-                }                
+                (code, len) = encodeChar(b);            // encode the char and get the length (because 0s at the beginning might disappier)
+                for (int i = len; i > 0; i--) result[index++] = (byte)((code >> (i - 1)) % 2);
+                numOfBits += len;
             }
-            if(leftBits < 8){
-                result.Add(currentByte);
-            }
-            if(leftBits >= 8) leftBits = 0;
 
-            byte firstBit = (byte) (result[0]|(leftBits<<5));
-            result[0] |= (byte) (leftBits<<5);
+            // store the padding at the end in the first three bits
+            byte leftBits = (byte)(8 - (numOfBits % 8));
+            result[0] = (byte)((leftBits >> 2) % 2);
+            result[1] = (byte)((leftBits >> 1) % 2);
+            result[2] = (byte)(leftBits % 2);
 
-            encodedMessage = Tools.ByteToString(result.ToArray());
+            // convert the byte array to a string
+            encodedText = result.bitArray.ToArray();
         }
 
-        public void Decode(){
-            StringBuilder result = new StringBuilder();
-            Node currentNode = startNode;
-            int currentBit = 7 - 3;             // first three bits contain the amount padding at the end
-            int idx = 0;
+        public void Decode()
+        {
+            List<byte> result = new List<byte>();
+            Node currentNode = root;
+            int index = 3;
 
-            int overhead = ((byte) encodedMessage[0]) >> 5;
+            BitArray textBitArray = new BitArray();
+            textBitArray.bitArray = new List<byte>(encodedText);
+            textBitArray.bytes = encodedText.Length;
 
-            while(idx < encodedMessage.Length){
-                if(((byte) encodedMessage[idx] >> currentBit) % 2 == 0) currentNode = currentNode.child1;
-                else currentNode = currentNode.child2;
+            byte overhead = (byte)(textBitArray.bitArray[0] >> 5);
 
-                currentBit--;                
+            while (index < textBitArray.bitCapacity - overhead)
+            {
+                currentNode = currentNode.children[textBitArray[index++]];
 
-                // when reached the bottom layer get the char
-                if(currentNode.child1 == null) {
-                    result.Append(currentNode.name);
-                    currentNode = startNode;
+                if (currentNode.children[0] == null)
+                {
+                    result.Add(currentNode.name);
+                    currentNode = root;
                 }
-
-                // when reached the end of the current byte reset the counter and go to the next byte
-                if(currentBit < 0) {
-                    currentBit = 7;
-                    idx++;
-                }
-                if(idx >= encodedMessage.Length-1 && currentBit < overhead) break;          // check if the program reached the end of the message
             }
-            message = result.ToString();
+            text = result.ToArray();
         }
 
         public override string ToString()
         {
-            return startNode.ToString(startNode.layer);
+            return root.ToString(root.layer);
         }
-    }
-
-    class Program{
-      static void Main(string[] args){
-        Tree tree = new Tree("ANANASSAFT");
-        Console.WriteLine(tree);
-        tree.encode();
-        Console.WriteLine(tree.encodedMessage);
-        tree.decode();
-        Console.WriteLine(tree.message);
-      }
     }
 }
 
 ```
-@LIA.eval(['main.cs'],"mono main.cs", "mono main.exe")
 
-## Other implementations
+### Other
 
 [GitHub](https://github.com/Yan0sch/HuffmanCode)
 
