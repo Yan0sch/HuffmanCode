@@ -2,24 +2,17 @@
 import: https://github.com/liascript/CodeRunner
 -->
 
+# Huffman coding
+
 [![LiaScript](https://raw.githubusercontent.com/LiaScript/LiaScript/master/badges/course.svg)](https://liascript.github.io/course/?https://raw.githubusercontent.com/Yan0sch/HuffmanCode/master/HuffmanCode.md#1)
 
-# Huffman coding
-| Parameter                | Course Information |
-| - | - |
-| **Event:** | `Einführung in die Fachsprache` |
-| **Semester** |  `Sommersemester 2021` |
-| **University:** | `Technische Universität Bergakademie Freiberg` |
-| **Content:**  | `Description and implementation of Huffman coding` |
-| **Link to GitHub:** | [https://github.com/Yan0sch/HuffmanCode](https://github.com/Yan0sch/HuffmanCode) |
-| **Autoren** | @author |
-
-![](https://media.giphy.com/media/26tn33aiTi1jkl6H6/source.gif)
+![Huffman tree](https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Huffman_tree_2.svg/1920px-Huffman_tree_2.svg.png) 
 
 ## General
 {{0}}
 The Huffman code is a kind of entropy encoding, which was developed by David A. Huffman and published in the 1952 paper "A Method for the Construction of Minimum-Redundancy Codes". It is ad type of prefix code that is commonly used for data compression.
 ![Huffman tree](https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Huffman_tree_2.svg/1920px-Huffman_tree_2.svg.png "Example of a Huffman tree")
+
 
 {{1}}
 The Huffman code is often used as back-end to other compression methods. For example Deflate (ZIP) and also multimedia codecs such as JPEG and MP3 make use of prefix-codes, which were called "Huffman codes". Note that most application use pre-defined codes instead of codes that were created with Huffman's algorithm.
