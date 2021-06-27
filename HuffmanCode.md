@@ -295,6 +295,18 @@ namespace HuffmanTree
 
 ```
 
+{{1}}
+* testing with a 194 Mb file:
+  * Gaming-PC (Intel Core i7 9700K):
+    * creating Tree: 0.6 s
+    * encoding: 24.6 s
+    * decoding: 20.3 s
+  * Laptop (AMD Ryzen 5 3500U):
+    * create Tree: 1.7 s
+    * encoding: 42.8 s
+    * decoding: 33.3 s
+* The Python version is even slower.
+
 ### Other
 
 [GitHub](https://github.com/Yan0sch/HuffmanCode)
