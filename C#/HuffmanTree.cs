@@ -8,7 +8,7 @@ namespace HuffmanTree
 {
     class Node
     {
-        public double prob;
+        public float prob;
         public int layer;
         public Node[] children = new Node[2];     // ! every node has exactly two children, not more and not less
         public byte name;
@@ -16,7 +16,7 @@ namespace HuffmanTree
         public byte code { get; private set; }
         public byte codeLen = 0;
 
-        public Node(byte name, double prob, int depth = 0, Node child1 = null, Node child2 = null)
+        public Node(byte name, float prob, int depth = 0, Node child1 = null, Node child2 = null)
         {
             this.name = name;               // set to null if there are more than two chars
             this.prob = prob;               // probability of one ore more chars in the message
@@ -29,12 +29,14 @@ namespace HuffmanTree
             this.children[1] = child2;
         }
 
-        public Node(string name, double prob, int depth = 0, Node[] children = null)
+        public Node(string name, float prob, int depth = 0, Node[] children = null)
         {
             // check if exactly two have been entered
             if (children.Length != 2) throw new ArgumentException("Every node takes exactly two children or no children!");
             // Node(name, prob, depth, children[0], children[1]);
         }
+
+        public Node(){}
 
         public void setCode(byte value)
         {
@@ -55,7 +57,7 @@ namespace HuffmanTree
                 {
                     offset.Append("  ");
                 }
-                return $"Node {prob}; {Convert.ToString(code, 2)}\n" + offset.ToString() + $"├ {children[0].ToString(maxLayer)}\n" + offset.ToString() + $"└ {children[1].ToString(maxLayer)}";
+                return $"┐ {prob}; {Convert.ToString(code, 2)}\n" + offset.ToString() + $"├ {children[0].ToString(maxLayer)}\n" + offset.ToString() + $"└ {children[1].ToString(maxLayer)}";
             }
             return $"{(char)name}: {prob}; {Convert.ToString(code, 2).PadLeft(codeLen, '0')}";
         }
@@ -81,7 +83,7 @@ namespace HuffmanTree
 
     public class Tree
     {
-        private double[] charProbability = new double[256];     // list with the probability of each char (index ~ UTF-8)
+        private float[] charProbability = new float[256];     // list with the probability of each char (index ~ UTF-8)
         public byte[] text;                 // note that when you change the text, you need to create a new Huffman tree
 
         public byte[] encodedText { get; private set; }
@@ -89,60 +91,13 @@ namespace HuffmanTree
         private Node root;
         private (byte, byte)[] codes = new (byte, byte)[256];         // store the codes in a array, first value is the code, second value is the length, index ~ UTF-8
 
-        public Tree(string text)
+        public Tree(string path)
         {
-            this.text = Tools.StringToByte(text);
+            
+            text = File.ReadAllBytes(path);
             CountChars();
             CreateTree();
             CreateCodes();
-        }
-
-        public Tree(byte[] text)
-        {
-            this.text = text;
-            CountChars();
-            CreateTree();
-            CreateCodes();
-        }
-
-        public Tree(StreamReader reader, bool encoded)
-        {
-            if (encoded)
-            {
-                ReadEncodedFile(reader.ReadToEnd());
-            }
-            else
-            {
-                // Tree(reader.ReadToEnd());
-            }
-        }
-
-
-        // TODO implement Reading and Writing methods
-        private void ReadEncodedFile(string path)
-        {
-            // TODO
-        }
-
-        // save Nodes: "{name}{codelen}{code}{child1}{child2}"
-        // name: UTF-8 --> 8 bit
-        // codelen: 1 to 8 --> 4 bit (0 to 15)
-        // code: code value --> 1 to 8 bit
-        // children: null (0) or another node --> 8 bit or 13 to 20 bit
-        private string NodesToString()
-        {
-            StringBuilder result = new StringBuilder();
-            foreach (Node n in tree)
-            {
-
-            }
-            return "";
-        }
-        public void SaveFile(string path)
-        {
-            StreamWriter writer = new StreamWriter(path);
-
-
         }
 
         private void CountChars()
@@ -150,7 +105,7 @@ namespace HuffmanTree
             // count the chars in the message, divide it by the message length and add it to the probability
             foreach (byte b in text)
             {
-                charProbability[b] += (double)1 / text.Length;
+                charProbability[b] += (float)1 / text.Length;
             }
         }
         private void CreateTree()
