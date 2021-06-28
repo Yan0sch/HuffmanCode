@@ -6,7 +6,7 @@ import: https://github.com/liascript/CodeRunner
 
 [![LiaScript](https://raw.githubusercontent.com/LiaScript/LiaScript/master/badges/course.svg)](https://liascript.github.io/course/?https://raw.githubusercontent.com/Yan0sch/HuffmanCode/master/HuffmanCode.md#1)
 
-![Huffman tree](https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Huffman_tree_2.svg/1920px-Huffman_tree_2.svg.png) 
+![Huffman tree](https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Huffman_tree_2.svg/1920px-Huffman_tree_2.svg.png)
 
 ## General
 {{0}}
@@ -67,7 +67,7 @@ namespace HuffmanTree
         public Node[] children = new Node[2];     // ! every node has exactly two children, not more and not less
         public byte name;
         public bool used;
-        public byte code { get; private set; }
+        public int code { get; private set; }
         public byte codeLen = 0;
 
         public Node(byte name, float prob, int depth = 0, Node child1 = null, Node child2 = null)
@@ -92,14 +92,14 @@ namespace HuffmanTree
 
         public Node(){}
 
-        public void setCode(byte value)
+        public void setCode(int value)
         {
             code += value;
-            codeLen += 1;
-            if (children[0] == null || children[0] == null) return;
+            codeLen++;
+            if (children[0] == null || children[1] == null) return;
 
             // update the code of the children recursive
-            foreach (Node child in children) child.setCode((byte)(value << 1));
+            foreach (Node child in children) child.setCode(value << 1);
         }
 
         public string ToString(int maxLayer)
@@ -143,7 +143,7 @@ namespace HuffmanTree
         public byte[] encodedText { get; private set; }
         private List<Node> tree = new List<Node>();          // every char is represented by 8 bit, so the max number of possible chars is 256 (0..255)
         private Node root;
-        private (byte, byte)[] codes = new (byte, byte)[256];         // store the codes in a array, first value is the code, second value is the length, index ~ UTF-8
+        private (int, byte)[] codes = new (int, byte)[256];         // store the codes in a array, first value is the code, second value is the length, index ~ UTF-8
 
         public Tree(string path)
         {
@@ -224,7 +224,7 @@ namespace HuffmanTree
             }
         }
 
-        private (byte, byte) encodeChar(byte b)
+        private (int, byte) encodeChar(byte b)
         {
             if (codes[b].Item2 == 0) throw new ArgumentException($"Character {b} is not in the tree!");
             return codes[b];
@@ -233,7 +233,8 @@ namespace HuffmanTree
         public void Encode()
         {
             int index = 3;           // 3 bits at the beginning to store the padding at the end
-            byte len, code;
+            byte len;
+            int code;
             int numOfBits = 3;
             BitArray result = new BitArray();
 
@@ -285,7 +286,6 @@ namespace HuffmanTree
         }
     }
 }
-
 ```
 
 {{1}}
